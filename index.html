@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprovação de Fotos</title>
+    <style>
+            body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; text-align: center; }
+            h1 { color: #333; }
+            p { color: #666; margin-bottom: 20px; }
+            .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; max-width: 1200px; margin: 20px auto; }
+            .photo-card { background-color: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); overflow: hidden; text-align: left; }
+            .photo-card img { width: 100%; display: block; cursor: pointer; transition: transform 0.3s ease-in-out; }
+            .photo-card img:hover { transform: scale(1.05); }
+            .photo-info { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+            .photo-info h3 { margin: 0; color: #555; font-size: 1em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+            .edit-section { padding: 15px; background-color: #f9f9f9; border-top: 1px solid #eee; display: none; }
+            .edit-section textarea { width: 100%; height: 60px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; margin-top: 10px; }
+            .btn-toggle-edit, .btn-submit-all { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; transition: background-color 0.3s; }
+            .btn-toggle-edit { background-color: #6c757d; }
+            .btn-toggle-edit.active { background-color: #dc3545; }
+            .btn-toggle-edit:hover { background-color: #5a6268; }
+            .btn-submit-all { background-color: #28a745; padding: 15px 30px; margin-top: 30px; }
+            .btn-submit-all:hover { background-color: #218838; }
+            #photo-modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
+            #modal-image { display: block; margin: auto; max-width: 95%; max-height: 95%; }
+            #photo-modal .close { position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; transition: 0.3s; cursor: pointer; }
+            #photo-modal .close:hover { color: #bbb; text-decoration: none; }
+        </style>
+</head>
+<body>
+    <h1>Aprovação de Fotos</h1>
+    <p>Clique na foto para visualizar em tamanho maior. Abaixo de cada foto, use o botão "Fazer Comentário" se desejar adicionar alguma observação ou pedido de alteração. Se estiver tudo ok com a foto, não precisa adicioanr observação. Ao finalizar, clique no botão "Finalizar e Enviar".</p>
+    <div class="gallery" id="photo-gallery"></div>
+    <button class="btn-submit-all" onclick="gerarRelatorio()">Finalizar e Enviar</button>
+    <div id="photo-modal">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="modal-image">
+    </div>
+    <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                renderPhotos();
+                setupModal();
+            });
+
+            const photoFiles = ["a (130).jpg","a (137).jpg","a (239).jpg","a (348).jpg","a (395).jpg","a (406).jpg","a (410).jpg","a (423).jpg","a (434).jpg","a (436).jpg","a (440).jpg","a (453).jpg","a (53).jpg","a (573).jpg","a (591).jpg","a (596).jpg","a (609).jpg","a (652).jpg","a (667).jpg","a (675).jpg","a (688).jpg","a (705).jpg"];
+            let modal;
+            let modalImg;
+            let closeModal;
+
+            function setupModal() {
+                modal = document.getElementById('photo-modal');
+                modalImg = document.getElementById('modal-image');
+                closeModal = document.querySelector('#photo-modal .close');
+
+                closeModal.onclick = () => {
+                    modal.style.display = 'none';
+                };
+
+                window.onclick = (event) => {
+                    if (event.target == modal) {
+                        modal.style.display = 'none';
+                    }
+                };
+            }
+            
+            function renderPhotos() {
+                const photoGallery = document.getElementById('photo-gallery');
+                
+                if (!Array.isArray(photoFiles) || photoFiles.length === 0) {
+                    photoGallery.innerHTML = '<p>Nenhuma foto encontrada.</p>';
+                    return;
+                }
+
+                const photoCardsHTML = photoFiles.map((filename, index) => {
+                    return `
+                        <div class="photo-card" data-filename="${filename}">
+                            <img src="./fotos/${filename}" alt="Foto ${filename}" onclick="openModal('./fotos/${filename}')">
+                            <div class="photo-info">
+                                <h3>${filename}</h3>
+                                <button class="btn-toggle-edit" onclick="toggleEdit(${index})">Fazer Comentário</button>
+                            </div>
+                            <div class="edit-section" id="edit-section-${index}">
+                                <textarea placeholder="Adicione seu comentário sobre esta foto..."></textarea>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                photoGallery.innerHTML = photoCardsHTML;
+            }
+
+            function openModal(src) {
+                modal.style.display = 'flex';
+                modalImg.src = src;
+            }
+
+            function toggleEdit(index) {
+                const editSection = document.getElementById(`edit-section-${index}`);
+                const toggleButton = document.querySelector(`.photo-card:nth-child(${index + 1}) .btn-toggle-edit`);
+
+                if (editSection.style.display === 'block') {
+                    editSection.style.display = 'none';
+                    toggleButton.classList.remove('active');
+                    toggleButton.innerText = 'Fazer Comentário';
+                } else {
+                    editSection.style.display = 'block';
+                    toggleButton.classList.add('active');
+                    toggleButton.innerText = 'Fechar Comentário';
+                }
+            }
+
+            function gerarRelatorio() {
+                const photoCards = document.querySelectorAll('.photo-card');
+                let mensagem = "#APROVACAO\n\n";
+                let temAlteracao = false;
+
+                mensagem += "Relatório de aprovação de fotos:\n\n";
+
+                photoCards.forEach((card) => {
+                    const textarea = card.querySelector('.edit-section textarea');
+
+                    if (textarea && textarea.value.trim() !== '') {
+                        temAlteracao = true;
+                        const filename = card.dataset.filename;
+                        const comentario = textarea.value.trim();
+                        mensagem += 'Foto: ' + filename + '\n';
+                        mensagem += 'Comentário: ' + comentario + '\n\n';
+                    }
+                });
+
+                if (!temAlteracao) {
+                    mensagem += "✅ Fotos aprovadas!\n\n";
+                    mensagem += "Pedido aprovado. Por favor, prossiga com a produção.";
+                } else {
+                    mensagem += "\n⚠️ Observações nos comentários das fotos para a continuação do pedido.\n";
+                }
+
+                const numeroWhatsapp = "5542998370150";
+
+                const url = 'https://api.whatsapp.com/send?phone=' + numeroWhatsapp + '&text=' + encodeURIComponent(mensagem);
+                window.open(url, '_blank');
+            }
+        </script>
+</body>
+</html>
